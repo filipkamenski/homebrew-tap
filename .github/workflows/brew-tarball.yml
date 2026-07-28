@@ -23,8 +23,8 @@ jobs:
         id: date
         run: |
           set -x
-          echo "date=$(date -u +%Y\-%m\-%d\ %H\:%M\:%S)" >> $GITHUB_OUTPUT
-          echo "tag_date=$(date -u +%Y\-%m\-%d-%H-%M-%S)" >> $GITHUB_OUTPUT
+          echo "date=$(date -u +%Y-%m-%d\ %H:%M:%S)" >> "$GITHUB_OUTPUT"
+          echo "tag_date=$(date -u +%Y-%m-%d-%H-%M-%S)" >> "$GITHUB_OUTPUT"
 
       - name: Create Release
         if: github.event_name != 'pull_request'
@@ -76,14 +76,16 @@ jobs:
               env --ignore-environment PATH=/usr/bin:/bin:/usr/sbin:/sbin HOME=/home/linuxbrew NONINTERACTIVE=1 /usr/bin/bash /tmp/brew-install
               tar --zstd -cvf /outdir/$TARBALL_FILENAME /home/linuxbrew/.linuxbrew"
 
-          mkdir -p $SHASUM_DIR
+          mkdir -p "$SHASUM_DIR"
           for spice in 1 256 512 ; do
             "sha${spice}sum" "$OUTDIR/$TARBALL_FILENAME" | tee "$SHASUM_DIR/homebrew-$(arch).sha${spice}"
           done
 
-          echo "outdir=$(realpath $OUTDIR)" >> "$GITHUB_OUTPUT"
-          echo "tarball_file=$(realpath $OUTDIR)/$TARBALL_FILENAME" >> "$GITHUB_OUTPUT"
-          echo "shasum_dir=$(realpath $SHASUM_DIR)" >> "$GITHUB_OUTPUT"
+          {
+            echo "outdir=$(realpath "$OUTDIR")"
+            echo "tarball_file=$(realpath "$OUTDIR")/$TARBALL_FILENAME"
+            echo "shasum_dir=$(realpath "$SHASUM_DIR")"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Upload to Job Artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
