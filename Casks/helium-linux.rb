@@ -21,7 +21,7 @@ cask "helium-linux" do
   artifact "helium-#{version}-#{arch}_linux/helium.desktop",
            target: "#{Dir.home}/.local/share/applications/helium.desktop"
 
-  preflight_steps do
+  preflight do
     pkg_dir = "#{staged_path}/helium-#{version}-#{arch}_linux"
 
     FileUtils.mkdir_p "#{Dir.home}/.local/share/applications"
