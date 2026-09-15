@@ -1,0 +1,59 @@
+name: Auto-update helium-linux cask
+
+on:
+  schedule:
+    - cron: "23 5 * * *" # daily 05:23 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: helium-auto-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check latest upstream release and update cask if changed
+        id: update
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          LATEST="$(gh api repos/imputnet/helium-linux/releases/latest --jq .tag_name)"
+          CURRENT="$(sed -n 's/^  version "\(.*\)"$/\1/p' Casks/helium-linux.rb)"
+          echo "latest=$LATEST current=$CURRENT"
+          if [ "$LATEST" = "$CURRENT" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          SHA_ARM="$(curl -fsSL "https://github.com/imputnet/helium-linux/releases/download/${LATEST}/helium-${LATEST}-arm64_linux.tar.xz" | sha256sum | cut -d' ' -f1)"
+          SHA_X86="$(curl -fsSL "https://github.com/imputnet/helium-linux/releases/download/${LATEST}/helium-${LATEST}-x86_64_linux.tar.xz" | sha256sum | cut -d' ' -f1)"
+
+          python3 - "$LATEST" "$SHA_ARM" "$SHA_X86" <<'EOF'
+          import re, sys
+          version, sha_arm, sha_x86 = sys.argv[1:4]
+          p = "Casks/helium-linux.rb"
+          s = open(p).read()
+          s = re.sub(r'version "[^"]+"', f'version "{version}"', s, count=1)
+          s = re.sub(r'sha256 arm64_linux:\s*"[^"]+"', f'sha256 arm64_linux:  "{sha_arm}"', s)
+          s = re.sub(r'x86_64_linux:\s*"[^"]+"', f'x86_64_linux: "{sha_x86}"', s)
+          open(p, "w").write(s)
+          EOF
+
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "version=$LATEST" >> "$GITHUB_OUTPUT"
+
+      - name: Commit and push
+        if: steps.update.outputs.changed == 'true'
+        run: |
+          git config user.name "helium-auto-update"
+          git config user.email "actions@users.noreply.github.com"
+          git add Casks/helium-linux.rb
+          git commit -m "helium-linux: bump to ${{ steps.update.outputs.version }}"
+          git push
