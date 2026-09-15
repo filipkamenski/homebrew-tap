@@ -34,45 +34,42 @@ cask "helium-linux" do
 
     FileUtils.chmod 0755, "#{pkg_dir}/helium-wrapper"
 
-    if ENV["HOMEBREW_HELIUM_WIDEVINE"] == "1"
-      puts "#{Tty.blue}==> Installing Widevine DRM support...#{Tty.reset}"
+    puts "#{Tty.blue}==> Installing Widevine DRM support...#{Tty.reset}"
 
-      require "tmpdir"
+    require "tmpdir"
 
-      begin
-        chromium_version = nil
-        IO.popen(["strings", "#{pkg_dir}/helium"], err: "/dev/null") do |io|
-          io.each_line do |line|
-            if line =~ /Chrome\/(\d+\.\d+\.\d+\.\d+)/
-              chromium_version = Regexp.last_match(1)
-              break
-            end
+    begin
+      chromium_version = nil
+      IO.popen(["strings", "#{pkg_dir}/helium"], err: "/dev/null") do |io|
+        io.each_line do |line|
+          if line =~ /Chrome\/(\d+\.\d+\.\d+\.\d+)/
+            chromium_version = Regexp.last_match(1)
+            break
           end
         end
-
-        raise "Could not detect Chromium version from helium binary" if chromium_version.nil? || chromium_version.empty?
-
-        chrome_arch = (arch == "x86_64") ? "amd64" : "arm64"
-        deb_url = "https://dl.google.com/linux/deb/pool/main/g/google-chrome-stable/google-chrome-stable_#{chromium_version}-1_#{chrome_arch}.deb"
-
-        Dir.mktmpdir("helium-widevine") do |tmpdir|
-          deb_path = "#{tmpdir}/chrome.deb"
-          raise "Download failed" unless system("curl", "-fsSL", "-o", deb_path, deb_url)
-
-          Dir.chdir(tmpdir) do
-            raise "ar extract failed" unless system("ar", "x", "chrome.deb", "data.tar.xz")
-          end
-
-          raise "tar extract failed" unless system("tar", "-xf", "#{tmpdir}/data.tar.xz",
-            "-C", pkg_dir, "--strip-components=4", "./opt/google/chrome/WidevineCdm/")
-        end
-
-        puts "#{Tty.green}==> Widevine DRM installed successfully (#{chromium_version}).#{Tty.reset}"
-      rescue => e
-        puts "#{Tty.yellow}Warning: Widevine installation failed: #{e.message}#{Tty.reset}"
-        puts "#{Tty.yellow}Warning: Premium media (Netflix, Spotify, etc.) won't play.#{Tty.reset}"
-        puts "#{Tty.yellow}Warning: Retry with: HOMEBREW_HELIUM_WIDEVINE=1 brew reinstall helium-linux#{Tty.reset}"
       end
+
+      raise "Could not detect Chromium version from helium binary" if chromium_version.nil? || chromium_version.empty?
+
+      chrome_arch = (arch == "x86_64") ? "amd64" : "arm64"
+      deb_url = "https://dl.google.com/linux/deb/pool/main/g/google-chrome-stable/google-chrome-stable_#{chromium_version}-1_#{chrome_arch}.deb"
+
+      Dir.mktmpdir("helium-widevine") do |tmpdir|
+        deb_path = "#{tmpdir}/chrome.deb"
+        raise "Download failed" unless system("curl", "-fsSL", "-o", deb_path, deb_url)
+
+        Dir.chdir(tmpdir) do
+          raise "ar extract failed" unless system("ar", "x", "chrome.deb", "data.tar.xz")
+        end
+
+        raise "tar extract failed" unless system("tar", "-xf", "#{tmpdir}/data.tar.xz",
+          "-C", pkg_dir, "--strip-components=4", "./opt/google/chrome/WidevineCdm/")
+      end
+
+      puts "#{Tty.green}==> Widevine DRM installed successfully (#{chromium_version}).#{Tty.reset}"
+    rescue => e
+      puts "#{Tty.yellow}Warning: Widevine installation failed: #{e.message}#{Tty.reset}"
+      puts "#{Tty.yellow}Warning: Premium media (Netflix, Spotify, etc.) won't play.#{Tty.reset}"
     end
   end
 
