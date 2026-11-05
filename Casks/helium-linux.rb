@@ -1,9 +1,9 @@
 cask "helium-linux" do
   arch arm: "arm64", intel: "x86_64"
 
-  version "0.20.3.1"
-  sha256 arm64_linux:  "f42fe851b26e1604c77399463968409ad68952a3a1808797e361189b31a4ea08",
-         x86_64_linux: "3759ea4e95bf4ef4a0a6477e3d73576b0f03906f2e80357275bfc6cacafb5fac"
+  version "0.21.1.1"
+  sha256 arm64_linux:  "672a3e9d581edfa414492ea12652aabdf02e700b8e89e2b5599419c70d01dc44",
+         x86_64_linux: "6cd7f240153cb9c0cdfa27bf1a6651ddcae73a898afc449a93dd10da83b4bd45"
 
   url "https://github.com/imputnet/helium-linux/releases/download/#{version}/helium-#{version}-#{arch}_linux.tar.xz"
   name "Helium"
